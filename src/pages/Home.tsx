@@ -25,17 +25,18 @@ const Home = () => {
         {/* 3D Title */}
         <div className="relative">
           <h1 
-            className="text-8xl md:text-9xl font-black tracking-wider text-glow"
+            className="text-8xl md:text-9xl font-black tracking-wider"
             style={{
               background: `linear-gradient(${shimmer}deg, hsl(180 100% 50%), hsl(320 100% 50%), hsl(45 100% 55%))`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
+              filter: "drop-shadow(0 0 20px hsla(180, 100%, 50%, 0.3))",
             }}
           >
             LIFEQUEST
           </h1>
-          <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 blur-2xl -z-10 animate-pulse-glow" />
+          <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 blur-xl -z-10 animate-pulse-glow" />
         </div>
 
         {/* Slogan */}

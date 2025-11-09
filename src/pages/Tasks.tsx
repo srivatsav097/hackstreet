@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Sparkles } from "lucide-react";
+import { Trash2, Plus, Sparkles, Home, Trash } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Task {
   id: string;
@@ -23,6 +24,7 @@ const Tasks = () => {
   const [newTask, setNewTask] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showMomentumToast, setShowMomentumToast] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,6 +33,7 @@ const Tasks = () => {
       } else {
         setUser(session.user);
         fetchTasks(session.user.id);
+        checkStaleProgress(session.user.id);
       }
     });
 
@@ -164,6 +167,53 @@ const Tasks = () => {
     }
   };
 
+  const checkStaleProgress = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_stats")
+      .select("last_activity_date")
+      .eq("user_id", userId)
+      .single();
+
+    if (data?.last_activity_date) {
+      const lastActivity = new Date(data.last_activity_date);
+      const now = new Date();
+      const daysDiff = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+
+      const lastToastKey = "lastMomentumToast";
+      const lastToast = localStorage.getItem(lastToastKey);
+      const shouldShowToast = !lastToast || 
+        Math.floor((now.getTime() - new Date(lastToast).getTime()) / (1000 * 60 * 60 * 24)) >= 1;
+
+      if (daysDiff >= 2 && shouldShowToast) {
+        setShowMomentumToast(true);
+        localStorage.setItem(lastToastKey, now.toISOString());
+        setTimeout(() => {
+          toast.info("Restart the momentum", {
+            id: "toastMomentum",
+            duration: 6000,
+          });
+          setShowMomentumToast(false);
+        }, 500);
+      }
+    }
+  };
+
+  const clearAllTasks = async () => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Error clearing tasks");
+    } else {
+      setTasks([]);
+      toast.success("All tasks cleared! Your XP and Bonus Points remain intact.");
+    }
+  };
+
   const deleteTask = async (taskId: string) => {
     const { error } = await supabase
       .from("tasks")
@@ -180,6 +230,15 @@ const Tasks = () => {
 
   return (
     <div className="min-h-screen p-6 relative overflow-hidden">
+      <Button
+        id="btnHome"
+        variant="ghost"
+        className="fixed top-6 left-6 z-50 glass-effect border border-secondary/30 hover:neon-glow"
+        onClick={() => navigate("/")}
+      >
+        <Home className="w-5 h-5 mr-2" />
+        Home
+      </Button>
       <Navbar />
 
       {/* Background effects */}
@@ -255,6 +314,41 @@ const Tasks = () => {
             </div>
           )}
         </div>
+
+        {/* Clear All Button */}
+        {tasks.length > 0 && (
+          <div className="mt-8 flex justify-center">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  id="btnClearAll"
+                  variant="outline"
+                  className="glass-effect border-destructive/50 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Clear All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass-effect border-primary/30">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear All Tasks?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove all current tasks. This won't deduct already-earned XP or Bonus Points. Continue?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="glass-effect">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={clearAllTasks}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </div>
     </div>
   );

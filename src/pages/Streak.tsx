@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
-import { Flame } from "lucide-react";
+import { Flame, ClipboardList } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Streak = () => {
   const navigate = useNavigate();
@@ -35,6 +36,15 @@ const Streak = () => {
 
   return (
     <div className="min-h-screen p-6 relative overflow-hidden">
+      <Button
+        id="btnTasksNav"
+        variant="ghost"
+        className="fixed top-6 left-6 z-50 glass-effect border border-primary/30 hover:neon-glow"
+        onClick={() => navigate("/tasks")}
+      >
+        <ClipboardList className="w-5 h-5 mr-2" />
+        Tasks
+      </Button>
       <Navbar />
 
       <div className="absolute inset-0 pointer-events-none">
